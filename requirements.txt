@@ -1,0 +1,16 @@
+click
+pandas
+numpy
+matplotlib
+seaborn
+networkx
+rdkit
+powerlaw
+dotmotif
+scikit-learn
+requests
+tqdm
+pyyaml
+jupyterlab
+streamlit
+boto3
