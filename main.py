@@ -64,9 +64,9 @@ def download_network_s3(id):
     return f
 
 
-download_reference_file('so23.index.yaml')
-download_reference_file('so23.micromotifs.json')
-download_reference_file('so23.smiles.json')
+# download_reference_file('so23.index.yaml')
+# download_reference_file('so23.micromotifs.json')
+# download_reference_file('so23.smiles.json')
 
 
 data = load(open('so23.index.yaml', 'r'), Loader=Loader)
@@ -195,8 +195,8 @@ of that comparisson is smaller than a given threshold (e.g. 0.01).
 
 degree_test = [{
     "α":  pwl_fit.alpha,
-    "p-value": pwl_fit.loglikelihood_ratio('exponential', 'power_law')[0],
-    "log ratio": pwl_fit.loglikelihood_ratio('exponential', 'power_law')[1],
+    "p-value": pwl_fit.loglikelihood_ratio('exponential', 'power_law')[1],
+    "log ratio": pwl_fit.loglikelihood_ratio('exponential', 'power_law')[0],
 }
 ]
 
