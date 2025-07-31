@@ -20,7 +20,7 @@ s3 = boto3.resource('s3',
   aws_secret_access_key = os.environ['R2_KEY']
 )
 
-sns.set_style('whitegrid')
+# sns.set_style('whitegrid')
 
 
 def download_reference_file(file_name):
@@ -78,20 +78,17 @@ st.title("Self Organization across chemical reaction networks")
 st.header("Introduction")
 
 """
-While there are only a few ways to be alive, there are many to not being alive. In
-the context of chemical reaction networks (CRNs), we know that certain CRNs related
-with biology exhibit certain properties while we assume that other CRNs lack those.
-However, the specific of those properties is rather fuzzy. In this server, we aim
-to provide a catalogue of CRNs of different chemical systems (biotic, prebiotic and
-abiotic) with the goal to enable a quick visualization of the data and to provide
-the raw data for future analysis.
+While there are only a few ways to be alive, there are countless ways not to be. 
+In the context of chemical reaction networks (CRNs), we recognize that certain biologically-related CRNs exhibit specific properties, 
+whereas others presumably do not. However, the specifics of these properties remain rather unclear. On this server, 
+we offer a catalog of CRNs from various chemical systems—including biotic, prebiotic, and abiotic—aimed at enabling quick 
+data visualization and providing raw data for future analysis.
 
 If you want to use this data or server for you research, please cite: 
 
-    Paper citation
+    TBA
 """
 
-st.header("Analysis")
 
 """
 We have curated a set of 16 chemical reaction networks, and we will be happy to include
@@ -117,28 +114,38 @@ This network was obtained from:
 
 st.write(f"*{networks.set_index('alias').loc[choice]['citation']}*")
 
+st.subheader("Download")
+
+"""
+The resulting file is a .GML, which can be open in Gephi or with libraries
+specialized in graphs (e.g. NetworkX)
+"""
+
+bf = io.BytesIO()
+nx.write_gml(n, bf)
+st.download_button(
+    'Download!', data=bf, file_name=choice + '.gml'
+)
 
 
 
 st.subheader('Network Macrostatistic')
 
 """
-As with every system in physics, we can look at the behaviour of each of the parts,
-or we can just look at the system-level behaviour. Network macrostatistics enable us
-to understand aspects of the network as how many connections does each component have
-(mean degree), how many sub networks are disconnected inside the network, 
-or how are the farthest nodes between them. 
+As with every system in physics, we can examine the behavior of each individual part or focus on the system-level behavior. 
+Network macrostatistics allow us to understand various aspects of a network, such as the average number of connections each component 
+has (mean degree), the number of sub-networks that are disconnected within the network, or the distance between the farthest nodes.
 """
 
 
 lc = n.subgraph(max(nx.strongly_connected_components(n), key=len))
-network_features = [dict(
-    size_nodes = nx.number_of_nodes(n),
-    size_edges = nx.number_of_edges(n),
-    n_strong_components = nx.number_strongly_connected_components(n), 
-    n_weak_components = nx.number_weakly_connected_components(n),
-    largest_component_size = nx.number_of_nodes(lc)
-)]
+network_features = [{
+    "# nodes": nx.number_of_nodes(n),
+    "# edges": nx.number_of_edges(n),
+    "# strongly connected components": nx.number_strongly_connected_components(n), 
+    "# weakly connected components": nx.number_weakly_connected_components(n),
+    "Largest strong component size": nx.number_of_nodes(lc)
+}]
 network_features = pd.DataFrame.from_records(network_features).T
 network_features.columns = ['value']
 st.write(network_features)
@@ -146,31 +153,36 @@ st.write(network_features)
 st.subheader('Degree distribution')
 
 """
-Critical systems are usually associated with heavy tailed distributed attributes. Since the
-early 2000s, the degree distribution (probability of each node to have an X number of 
-connections) of many networks have been associated to these heavy tailed degree distributions
-— though there is a certain level of controvery about which is the right distribution—. 
-"""
+Critical systems are often associated with heavy-tailed distributed attributes. Since the early 2000s, the degree distribution—the probability of each node having a 
+specific number of connections—of many networks has been linked to these heavy-tailed distributions, although there remains some controversy over which distribution is most appropriate.
 
-"""
-In this part, we compare the fits of a power-law degree distribution to the fit of an
-exponential degree distribution. The following figure shows the complementary 
-cumulative distribution functon (CCDF) of the empirical data (red), the power-law
-fit (blue), and the exponential fit (gray).
+In this section, we compare the fits of a power-law degree distribution to those of an exponential degree distribution. The following figure illustrates 
+the complementary cumulative distribution function (CCDF) of the empirical data (in red), the power-law fit (in blue), and the exponential fit (in gray).
 
 """
 
 degree_distribution = get_compounds_degrees(n)
 pwl_fit = pwl.Fit(degree_distribution)
-
+# bins, ccdf = pwl_fit.cdf(survival=True)
+# pl_bins = np.unique(pwl.trim_to_range(pwl_fit.data, xmin=pwl_fit.power_law.xmin, xmax=pwl_fit.power_law.xmax))
+# pl_ccdf = pwl_fit.power_law.cdf(pl_bins, survival=True)
+# exp_bins = np.unique(pwl.trim_to_range(pwl_fit.data, xmin=pwl_fit.exponential.xmin, xmax=pwl_fit.exponential.xmax))
+# exp_ccdf = pwl_fit.exponential.cdf(exp_bins, survival=True)
 
 fig, ax = plt.subplots(1)
 fig.set_size_inches(6.0, 3.0)
+# ax.plot(bins, ccdf, linewidth=1, marker='.', color='#298ACC', label='data')
+# ax.plot(pl_bins, pl_ccdf, linewidth=2, linestyle='-', color='#CC2A29', label='power-law')
+# ax.plot(exp_bins, exp_ccdf, linewidth=2, linestyle='-', color='gray', label='exponential')
 pwl_fit.plot_ccdf(ax=ax, linewidth=1, marker='.', color='#298ACC', label='data')
 pwl_fit.power_law.plot_ccdf(ax=ax, linewidth=2, linestyle='-', color='#CC2A29', label='power-law')
 pwl_fit.exponential.plot_ccdf(ax=ax, linewidth=2, linestyle='-', color='gray', label='exponential')
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
 ax.set_xlabel('K - degree')
 ax.set_ylabel('CCDF(k)')
+ax.set_yscale("log")
+ax.set_xscale("log")
 ax.legend()
 st.pyplot(fig)
 
@@ -181,11 +193,12 @@ log-normal model a better fit, but such value is only significative if the p-val
 of that comparisson is smaller than a given threshold (e.g. 0.01).
 """
 
-degree_test = [dict(
-    alpha = pwl_fit.alpha,
-    p_value=pwl_fit.loglikelihood_ratio('exponential', 'power_law')[0],
-    log_ratio=pwl_fit.loglikelihood_ratio('exponential', 'power_law')[1],
-)]
+degree_test = [{
+    "α":  pwl_fit.alpha,
+    "p-value": pwl_fit.loglikelihood_ratio('exponential', 'power_law')[0],
+    "log ratio": pwl_fit.loglikelihood_ratio('exponential', 'power_law')[1],
+}
+]
 
 degree_test = pd.DataFrame.from_records(degree_test).T
 degree_test.columns = ['value']
@@ -195,21 +208,15 @@ st.write(degree_test)
 st.subheader('Mass-Degree')
 
 """
-While we would love to know the distribution of energy and abundance of each system,
-that is usually intractable unless we have complete understanding of the partition
-functions. Alternatively, we can consider that the abundance of a compound might correlate
-with its abundance (more abundanct compounds could be more likely to react), and that
-the energy of a compound might correlate with its mass (larger molecules have more chemical
-bonds). Therefore, the relationship between mass and degree can provide a very
-coarse but still interesting view about the nature of the system. For instance, a system 
-where reactions carry few changes in enthalpy could lead to a system where elemental
-species and simpler molecules should be much more connected than those more 
-complex molecules.
-"""
+While we would ideally like to know the distribution of energy and the abundance of each system, this is typically 
+intractable without a complete understanding of the partition functions. Alternatively, we can consider that the abundance 
+of a compound might correlate with its reactivity—more abundant compounds could be more likely to react—and that the energy of a 
+compound might correlate with its mass, as larger molecules generally have more chemical bonds. Therefore, the relationship between 
+mass and degree can provide a rough but still insightful view of the nature of the system. For instance, in a system where reactions 
+involve minimal changes in enthalpy, elemental species and simpler molecules might be much more interconnected than more complex molecules.
 
-"""
-The following figure shows the log-log plot of the degree and the mass of each
-of the compounds of the network.
+
+The following figure presents a log-log plot of the degree and mass of each compound in the network.
 """
 
 mass_degree = pd.DataFrame.from_records(get_molecule_degree_mass(n, choice, ''))
@@ -253,17 +260,9 @@ col1, col2 = st.columns(2)
 
 with col1:
     """
-    The most recent research in graph analysis is showing that very different networks
-    can still provide similar network macro-statistics. The analysis of micro-motifs
-    enables us to dive deeper into the understanding of our networks by understanding
-    how frequent are the different ways to connect systems among them.
-    """
+    Recent research in graph analysis has shown that very different networks can still exhibit similar macro-statistics. By analyzing micro-motifs, we can gain deeper insights into our networks by understanding the frequency of different connection patterns among systems.
 
-    """
-    In the case of CRNs, we are specially intersted in understanding how two reactions
-    can relate to each other. We look for 7 motifs that we describe in the following figure.
-    In the smallest networks, we attempt to generate randomized versions of the network to
-    compare the abundance of each motif against a random network with the same global statistics.
+    In the case of chemical reaction networks (CRNs), we are particularly interested in understanding how two reactions can relate to each other. We focus on seven specific motifs, which are described in the following figure. For the smallest networks, we generate randomized versions to compare the abundance of each motif against a random network with the same global statistics.
     """
 
 with col2:
@@ -272,17 +271,31 @@ with col2:
 
 
 motifs = pd.read_json('so23.micromotifs.json')
+random_motifs = pd.read_csv('so23.micromotifs.random.csv', index_col=None)
+for col in random_motifs.columns[1:-1]:
+    random_motifs[col] = random_motifs[col] / random_motifs['total']
+random_motifs['mx'] = random_motifs['m5'] + random_motifs['m6']
 motifs = motifs.query(f'network == "{choice}"')
-
+random_motifs = random_motifs.query(f'network == "{choice}"')
 if len(motifs) > 0:
 
     motifs_melt = motifs.melt(
         id_vars=['network'], value_vars=['m0', 'm1', 'm2', 'm3', 'm4', 'mx']
     )
 
-    g = sns.catplot(data=motifs_melt, x='variable', y='value', kind='bar', height=3.0, aspect=2.0, errorbar='sd')
-    g.set_xlabels('Micro-Motif')
-    g.set_ylabels('Frequency')
+    motifs_melt['type'] = 'empirical'
+    random_motifs_melt = random_motifs.melt(
+        id_vars=['network'], value_vars=['m0', 'm1', 'm2', 'm3', 'm4', 'mx']
+    )
+    random_motifs_melt['type'] = 'randomized'
+
+    motifs_melt = pd.concat([motifs_melt, random_motifs_melt])
+    
+    g = sns.catplot(data=motifs_melt, y='variable', x='value', height=3.0, aspect=2.0, hue='type',
+                    palette={'empirical': "#51658C", 'randomized': "#D96A42"})
+    
+    g.set_ylabels('Micro-Motif')
+    g.set_xlabels('Frequency')
     st.pyplot(g)
 
 else:
@@ -291,10 +304,7 @@ else:
 st.subheader("Reactions and molecules")
 
 """
-This chemical reaction networks are collections of reactions and molecules that
-happen to be in the real world. Although curating and annotating individually each of these
-reactions is a daunting task, we love to dive deeper into which compounds and reactions are
-more central across the different networks.
+Chemical reaction networks are collections of reactions and molecules that occur in the real world. Although curating and annotating each of these reactions individually is a daunting task, we are eager to explore which compounds and reactions are most central across the different networks.
 """
 
 
@@ -310,10 +320,12 @@ if filter_ != '':
 reaction_subset = reaction_subset.sample(n=min(len(reaction_subset), 20))[['id', 'smiles']]
 st.dataframe(reaction_subset)
 
+st.header("About")
 
-st.subheader("Download")
-bf = io.BytesIO()
-nx.write_gml(n, bf)
-st.download_button(
-    'Download!', data=bf, file_name=choice + '.gml'
-)
+"""
+This project was conducted at the University of Wisconsin-Madison, in the laboratory of Professor Betül Kaçar. The project was primarily developed by Bruno Cuevas-Zuviría, who is also responsible for maintaining this site. For any inquiries, please contact bruno.czuviria [at] upm.es.
+"""
+col1, _,  col2, _, col3 = st.columns(5)
+col1.image("KacarLab-Logo_Circle-Black.png")
+col2.image("black-center-UWlogo-print.png")
+col3.image("MUSE-Logo_Patch-Black.png")
