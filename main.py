@@ -103,6 +103,15 @@ choice = st.selectbox(
 )
 
 if choice is None:
+    st.header("About")
+
+    """
+    This project was conducted at the University of Wisconsin-Madison, in the laboratory of Professor Betül Kaçar. The project was primarily developed by Bruno Cuevas-Zuviría, who is also responsible for maintaining this site. For any inquiries, please contact bruno.czuviria [at] upm.es.
+    """
+    col1, _,  col2, _, col3 = st.columns(5)
+    col1.image("KacarLab-Logo_Circle-Black.png")
+    col2.image("black-center-UWlogo-print.png")
+    col3.image("MUSE-Logo_Patch-Black.png")
     sys.exit()
 
 u = download_network_s3(choice)
